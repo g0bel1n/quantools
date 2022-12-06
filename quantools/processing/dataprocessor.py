@@ -1,3 +1,5 @@
+from typing import Any
+
 class DataProcessor:
 
     def __init__(self) -> None:

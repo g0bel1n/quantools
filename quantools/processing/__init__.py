@@ -1,4 +1,4 @@
-from partialdiff import PartiallDiff
+from .partialdiff import PartialDiff
 
 
 
