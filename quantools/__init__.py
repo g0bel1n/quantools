@@ -1,4 +1,4 @@
-from .processing.partialdiff import PartialDiff
+from .processing.fractionaldiff import FractionalDiff
 
 
-__all__ = ["PartialDiff"]
+__all__ = ["FractionalDiff"]

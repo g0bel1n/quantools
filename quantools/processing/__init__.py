@@ -1,4 +1,3 @@
-from .partialdiff import PartialDiff
+from .fractionaldiff import FractionalDiff
 
-
-__all__ = ["PartialDiff"]
+__all__ = ["FractionalDiff"]

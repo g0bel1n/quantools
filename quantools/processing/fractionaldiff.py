@@ -6,7 +6,7 @@ from .dataprocessor import DataProcessor
 from ._utils import isStationnary
 
 
-class PartialDiff(DataProcessor):
+class FractionalDiff(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
 
@@ -26,6 +26,15 @@ class PartialDiff(DataProcessor):
         return X
 
     def _autodiff(self, X: pd.Series, precision: float):
+        """
+        It takes a series and a precision, and returns the differenced series and the order of differencing
+
+        :param X: pd.Series
+        :type X: pd.Series
+        :param precision: the precision of the autodiff function
+        :type precision: float
+        :return: The difference between the current value and the previous value.
+        """
         a, b = 0, 2
         while b - a >= precision:
             mid = (b + a) / 2
@@ -38,7 +47,7 @@ class PartialDiff(DataProcessor):
 
     def _1D_diff(
         self,
-        X: Union[pd.Series, pd.DataFrame],
+        X: pd.Series,
         precision: float,
         method: str = "fixed-window",
         order: Optional[Union[float, int]] = None,
