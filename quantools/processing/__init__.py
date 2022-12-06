@@ -1,5 +1,4 @@
 from .partialdiff import PartialDiff
 
 
-
-__all__ = ['PartialDiff']
+__all__ = ["PartialDiff"]

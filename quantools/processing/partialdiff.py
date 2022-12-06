@@ -1,13 +1,9 @@
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
-from statsmodels.tsa.stattools import adfuller
 
 from .dataprocessor import DataProcessor
-
-
-def isStationnary(X: pd.Series, tol: float = 0.05):
-    return adfuller(X.dropna())[1] <= tol
+from ._utils import isStationnary
 
 
 class PartialDiff(DataProcessor):
