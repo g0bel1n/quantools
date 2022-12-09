@@ -36,6 +36,9 @@ class FractionalDiff(DataProcessor):
         :return: The difference between the current value and the previous value.
         """
         a, b = 0, 2
+        if isStationnary(X):
+            return X, 0
+
         while b - a >= precision:
             mid = (b + a) / 2
             _X = X.copy(deep=True)
@@ -65,6 +68,7 @@ class FractionalDiff(DataProcessor):
         method: str = "fixed-window",
         order: Optional[Union[float, int]] = None,
         return_order: bool = False,
+        rename: bool = True,
     ) -> Union[
         Tuple[Union[pd.Series, pd.DataFrame], List[float]],
         Union[pd.Series, pd.DataFrame],
@@ -74,7 +78,7 @@ class FractionalDiff(DataProcessor):
         )
 
         if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
-            cols_name = [f"{el}_stationnarized" for el in X.columns]
+            cols_name = [f"{el}_stationnarized" for el in X.columns] if rename else X.columns
             for col in range(X.shape[1]):
                 X_diff_, order_ = self._1D_diff(
                     X.iloc[:, col], precision, method, order
