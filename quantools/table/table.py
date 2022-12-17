@@ -9,13 +9,17 @@ import re
 from quantools.processing import FractionalDiff
 
 logger = logging.getLogger(__name__)
-authorized_filetype = ["csv", "json", "excel"]
+authorized_filetype = ["csv", "json", "excel", "txt"]
 
 
 def return_Table(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        return Table(result, verbose=False) if isinstance(result, DataFrame) else result
+        return (
+            Table(result, verbose=False)
+            if isinstance(result, (DataFrame, Series))
+            else result
+        )
 
     return wrapper
 
@@ -30,25 +34,34 @@ class Table(DataFrame):
         copy=False,
         ts=True,
         verbose=False,
-    ):
+        header=None,
+    ):  # sourcery skip: low-code-quality
 
         if isinstance(data, str):
             filetype = data.split(".")[-1]
             if filetype not in authorized_filetype:
                 raise ValueError(f"Filetype {filetype} is not supported")
 
-            if os.path.getsize(data) > 1e6:
+            if os.path.getsize(data) > 100e6:
                 chunksize = 1e6
                 logger.warning(f"File is too big, chunksize is set to {chunksize}")
             else:
                 chunksize = None
 
             if filetype == "csv":
-                super().__init__(pd.read_csv(data, chunksize=chunksize))
+                super().__init__(pd.read_csv(data, chunksize=chunksize, header=header))
             elif filetype == "json":
-                super().__init__(pd.read_json(data, chunksize=chunksize))
+                super().__init__(pd.read_json(data, chunksize=chunksize, header=header))
             elif filetype == "excel":
-                super().__init__(pd.read_excel(data))
+                super().__init__(
+                    pd.read_excel(
+                        data,
+                    )
+                )
+            elif filetype == "txt":
+                super().__init__(
+                    pd.read_csv(data, sep=",", chunksize=chunksize, header=header)
+                )
         else:
             super().__init__(
                 data=data, index=index, columns=columns, dtype=dtype, copy=copy
@@ -72,7 +85,9 @@ class Table(DataFrame):
             for col in self.columns:
                 first_value = self[col][0]
                 if isinstance(first_value, str):
-                    if re.match(r"\d{4}-\d{2}-\d{2}", first_value):
+                    if re.match(r"\d{4}-\d{2}-\d{2}", first_value) or re.match(
+                        r"\d{2}/\d{2}/\d{4}", first_value
+                    ):
                         self[col] = pd.to_datetime(self[col])
                         self.set_index(col, inplace=True)
                         logger.info(f"Column {col} is set as index")
@@ -97,6 +112,15 @@ class Table(DataFrame):
     def __type__(self):
         return "Table"
 
+    def __repr__(self):
+        return f"Table({super().__repr__()})"
+
+    def __str__(self):
+        return f"Table({super().__str__()})"
+
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
     @return_Table
     def stationnarize(
         self,
@@ -106,7 +130,7 @@ class Table(DataFrame):
         return_order: bool = False,
         inplace=False,
     ):
-        num = self.select_dtypes(include=np.number)
+        num = self.select_dtypes(include='number')
 
         frac_diff = FractionalDiff()
 
@@ -134,7 +158,7 @@ class Table(DataFrame):
 
     @return_Table
     def normalize(self, inplace=False):
-        num = self.select_dtypes(include=np.number)
+        num = self.select_dtypes(include='number')
 
         if not inplace:
             return (num - num.mean()) / num.std()
@@ -144,11 +168,15 @@ class Table(DataFrame):
         self.loc[:, num.columns] = (num - num.mean()) / num.std()
         return None
 
-    def __repr__(self):
-        return "Table"
+    @return_Table
+    def __get_item__(self, key):
+        return self[key]
 
-    def __str__(self):
-        return "Table"
-
-    def __call__(self, *args, **kwargs):
+    @return_Table
+    def drop(self, labels=None, axis=0, index=None, columns=None, level=None, inplace=False, errors="raise"):
+        super().drop(labels=labels, axis=axis, index=index, columns=columns, level=level, inplace=inplace, errors=errors)
         return self
+
+    @return_Table
+    def drop_duplicates(self, subset=..., keep: bool = ..., inplace: bool = ..., ignore_index: bool = ...) -> DataFrame:
+        return super().drop_duplicates(subset, keep, inplace, ignore_index)
