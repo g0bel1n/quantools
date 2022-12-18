@@ -180,3 +180,11 @@ class Table(DataFrame):
     @return_Table
     def drop_duplicates(self, subset=..., keep: bool = ..., inplace: bool = ..., ignore_index: bool = ...) -> DataFrame:
         return super().drop_duplicates(subset, keep, inplace, ignore_index)
+
+    @return_Table
+    def sharpe(self, start=None, end=None):
+        return self.loc[start:end].mean() / self.loc[start:end].std()
+
+    @return_Table
+    def calmar(self, start=None, end=None):
+        return self.loc[start:end].mean() / (self.loc[start:end].div(self.loc[start:end].cummax()).sub(1)).max()
