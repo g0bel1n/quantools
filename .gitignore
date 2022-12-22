@@ -1,3 +1,6 @@
 *.pyc
 *__pycache__
 .pytest_cache
+*.csv
+bouillon.py
+*.html
