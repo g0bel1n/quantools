@@ -11,7 +11,13 @@ import quantools as qt
 
 def plot(
     self: qt.TableSeries,
-    to_plot: list = ["normality", "cumsum", "drawdown", "autocorrelation", "indicators"],
+    to_plot: list = [
+        "normality",
+        "cumsum",
+        "drawdown",
+        "autocorrelation",
+        "indicators",
+    ],
     return_type: str = "percentage",
 ):
     """
@@ -19,7 +25,9 @@ def plot(
     """
 
     self_df = self.as_df()
-    source_base = ColumnDataSource(data = {'date': self_df.index, 'value': self_df, 'cumsum': self_df.cumsum()})
+    source_base = ColumnDataSource(
+        data={"date": self_df.index, "value": self_df, "cumsum": self_df.cumsum()}
+    )
 
     col1, col2 = [], []
     col1_width, col2_width = 800, 400
@@ -41,7 +49,9 @@ def plot(
 
     if "cumsum" in to_plot:
 
-        p.line(x="date", y="cumsum", source=source_base, color="red", legend_label="cumsum")
+        p.line(
+            x="date", y="cumsum", source=source_base, color="red", legend_label="cumsum"
+        )
 
     range_tool = RangeTool(x_range=p.x_range)
     range_tool.overlay.fill_color = "navy"
@@ -67,20 +77,18 @@ def plot(
     print(self_df)
 
     ht = HoverTool(
-    tooltips=[
-        ( 'date',   '@date{%F}'            ),
-        ( 'close',  '$@{cumsum}{%0.2f}' ), # use @{ } for field names with spaces
-    ],
-
-    formatters={
-        '@date'        : 'datetime', # use 'datetime' formatter for '@date' field
-        '@{cumsum}' : 'printf',   # use 'printf' formatter for '@{adj close}' field
-                                     # use default 'numeral' formatter for other fields
-    },
-
-    # display a tooltip whenever the cursor is vertically in line with a glyph
-    mode='vline'
-)
+        tooltips=[
+            ("date", "@date{%F}"),
+            ("close", "$@{cumsum}{%0.2f}"),  # use @{ } for field names with spaces
+        ],
+        formatters={
+            "@date": "datetime",  # use 'datetime' formatter for '@date' field
+            "@{cumsum}": "printf",  # use 'printf' formatter for '@{adj close}' field
+            # use default 'numeral' formatter for other fields
+        },
+        # display a tooltip whenever the cursor is vertically in line with a glyph
+        mode="vline",
+    )
     p.add_tools(ht)
 
     col1 += [p, select]
@@ -100,20 +108,23 @@ def plot(
                 TableColumn(field="index", title="Indicator"),
                 TableColumn(field="Indicator", title="Value"),
             ]
-            data_table = DataTable(source=source, columns=columns, width=col2_width, height=len(indicators_df) * 30)
+            data_table = DataTable(
+                source=source,
+                columns=columns,
+                width=col2_width,
+                height=len(indicators_df) * 30,
+            )
 
             col2.append(data_table)
 
-
     p_n = figure(width=col2_width, height=400, title="Normality")
     if "normality" in to_plot:
-        #restric df to p.x_range
+        # restric df to p.x_range
         hist, edges = np.histogram(self_df, bins=50, density=True)
         mean, var = self_df.mean(), self_df.std() ** 2
         print(mean)
         x = np.linspace(self_df.min(), self_df.max(), len(self_df))
         pdf = 1 / np.sqrt(2 * np.pi * var) * np.exp(-((x - mean) ** 2) / (2 * var))
-
 
         p_n.quad(
             top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color="#036564"
@@ -122,7 +133,13 @@ def plot(
 
         col2.append(p_n)
 
-    p_d = figure(width=800, height=200, x_axis_type="datetime", x_range=p.x_range, title="Drawdown")
+    p_d = figure(
+        width=800,
+        height=200,
+        x_axis_type="datetime",
+        x_range=p.x_range,
+        title="Drawdown",
+    )
     if "drawdown" in to_plot:
         drawdown = self_df.where(self_df < 0, 0)
         p_d.line(x=self_df.index, y=drawdown, color="red")
@@ -133,8 +150,6 @@ def plot(
         p_d.toolbar_location = None
 
         col1.append(p_d)
-
-
 
     if "returns" in to_plot:
         p_r = figure(
@@ -154,15 +169,15 @@ def plot(
         p_a = figure(
             width=col2_width,
             height=200,
-            title=f"Autocorrelation, unit:{self_df.index.freqstr}",
+            title=f"Autocorrelation, unit: {self_df.index.freqstr}",
         )
-        df_with_lags = pd.concat([self_df.shift(i) for i in range(0,100)], axis=1)
+        df_with_lags = pd.concat([self_df.shift(i) for i in range(100)], axis=1)
         autocorr = df_with_lags.corr().iloc[0, 1:]
         lag = np.arange(1, 100)
 
-        source_autocorr = ColumnDataSource(data = {'lag': lag, 'autocorr': autocorr})
+        source_autocorr = ColumnDataSource(data={"lag": lag, "autocorr": autocorr})
 
-        #p_a.line(top="autocorr", bottom=0, left="lag", right="lag", source=source_autocorr, fill_color="#036564")
+        # p_a.line(top="autocorr", bottom=0, left="lag", right="lag", source=source_autocorr, fill_color="#036564")
         p_a.vbar(x="lag", top="autocorr", source=source_autocorr, color="red")
 
         tootltips = [
@@ -174,4 +189,4 @@ def plot(
         col2.append(p_a)
 
     # plots[0].append()
-    return (layout(row(column(col1), column(col2))))
+    return layout(row(column(col1), column(col2)))

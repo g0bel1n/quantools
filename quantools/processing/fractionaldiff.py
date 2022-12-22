@@ -19,14 +19,13 @@ class FractionalDiff(DataProcessor):
         _X = X.copy(deep=True)
         if order == 1:
             _X = X - X.shift(int(order))
-            
+
         w = -1
         for i in range(1, window_size):
             _X += w * X.shift(i)
             w *= -(order - i) / (i + 1)
 
         return _X
-
 
     def _autodiff(self, X: pd.Series, precision: float):
         """
@@ -81,7 +80,9 @@ class FractionalDiff(DataProcessor):
         )
 
         if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
-            cols_name = [f"{el}_stationnarized" for el in X.columns] if rename else X.columns
+            cols_name = (
+                [f"{el}_stationnarized" for el in X.columns] if rename else X.columns
+            )
             for col in range(X.shape[1]):
                 X_diff_, order_ = self._1D_diff(
                     X.iloc[:, col], precision, method, order

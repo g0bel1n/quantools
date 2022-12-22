@@ -14,9 +14,8 @@ from bokeh.models import TabPanel, Tabs
 
 
 logger = logging.getLogger(__name__)
-authorized_filetype = ["csv", "json", "excel", "txt"]
 
-from quantools.quantools_types import *
+__authorized_filetype__ = ["csv", "json", "excel", "txt"]
 
 __available_indicators__ = ["sharpe", "sortino", "calmar", "max_drawdown"]
 
@@ -29,7 +28,6 @@ def return_Table(func):
             if isinstance(result, (DataFrame, Series))
             else result
         )
-
     return wrapper
 
 
@@ -92,6 +90,7 @@ def indicators(self, start=None, end=None, risk_free=0):
 
 
 class TableSeries(Series):
+
     @property
     def _constructor(self):
         return TableSeries
@@ -142,7 +141,7 @@ class Table(DataFrame):
 
         if isinstance(data, str):
             filetype = data.split(".")[-1]
-            if filetype not in authorized_filetype:
+            if filetype not in __authorized_filetype__:
                 raise ValueError(f"Filetype {filetype} is not supported")
 
             if os.path.getsize(data) > 100e6:
@@ -286,11 +285,11 @@ class Table(DataFrame):
     indicators = indicators
 
     def autoplot(self, **kwargs):
-        tabs=[]
-        for col in self.columns:
-            if pd.api.types.is_numeric_dtype(self[col]):
-                tabs.append(TabPanel(child = qt.plot(self[col], **kwargs), title=col))
-        
+        tabs = [
+            TabPanel(child=qt.plot(self[col], **kwargs), title=col)
+            for col in self.columns
+            if pd.api.types.is_numeric_dtype(self[col])
+        ]
         show(Tabs(tabs=tabs))
         
 
