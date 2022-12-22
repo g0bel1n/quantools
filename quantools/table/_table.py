@@ -160,29 +160,21 @@ class Table(DataFrame):
             if filetype not in __authorized_filetype__:
                 raise ValueError(f"Filetype {filetype} is not supported")
 
-            if os.path.getsize(data) > 100e6:
-                chunksize = 1e6
-                logger.warning(f"File is too big, chunksize is set to {chunksize}")
-            else:
-                chunksize = None
-
             if filetype == "csv":
-                super().__init__(pd.read_csv(data, chunksize=chunksize, header=header))
+                self = pd.read_csv(data, header=header)
             elif filetype == "json":
-                super().__init__(pd.read_json(data, chunksize=chunksize, header=header))
+                self = pd.read_json(data)
             elif filetype == "excel":
-                super().__init__(
-                    pd.read_excel(
-                        data,
-                    )
+                self = pd.read_excel(
+                    data,
                 )
+
             elif filetype == "txt":
-                super().__init__(
-                    pd.read_csv(data, sep=",", chunksize=chunksize, header=header)
-                )
+                self = pd.read_csv(data, sep=",", header=header)
+
         else:
             super().__init__(
-                data=data, index=index, columns=columns, dtype=dtype, copy=copy
+                data=data, index=index, columns=columns, dtype=dtype, copy=copy  # type: ignore
             )
 
         self.is_stationnary = False
@@ -272,7 +264,7 @@ class Table(DataFrame):
             precision=precision,
             rename=False,
         )
-        self.loc[:, num.columns] = diff_[0] if return_order else diff_
+        self[num.columns] = diff_[0] if return_order else diff_
         return None
 
     def normalize(self, inplace=False):
@@ -305,7 +297,7 @@ class Table(DataFrame):
 
     def autoplot(self, **kwargs):
         tabs = [
-            TabPanel(child=qt.plot(self[col], **kwargs), title=col)
+            TabPanel(child=qt.plot(self.loc[:, col], **kwargs), title=col)  # type: ignore weird cause TableSeries
             for col in self.columns
             if pd.api.types.is_numeric_dtype(self[col])
         ]

@@ -30,7 +30,8 @@ def generate_brownian_prices(
 
     increments = np.random.normal(
         loc=drift * dt, scale=vol * np.sqrt(dt), size=(n_periods, n_timeseries)
-    ).reshape((n_periods, n_timeseries))
+    )
+    increments = increments.reshape((n_periods, n_timeseries))
 
     # Generate Brownian motion prices.
 

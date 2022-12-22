@@ -53,10 +53,9 @@ def plot(
     # remove axis
     logo.axis.visible = False
     # remove toolbar
-    logo.toolbar.logo = None
-    logo.toolbar_location = None
+    logo.toolbar_location = None  # type: ignore
     # remove outline
-    logo.outline_line_color = None
+    logo.outline_line_color = None # type: ignore
 
     col2.append(logo)
 
@@ -86,8 +85,8 @@ def plot(
         )
 
     range_tool = RangeTool(x_range=p.x_range)
-    range_tool.overlay.fill_color = "navy"
-    range_tool.overlay.fill_alpha = 0.2
+    range_tool.overlay.fill_color = "navy" # type: ignore
+    range_tool.overlay.fill_alpha = 0.2 # type: ignore
 
     select = figure(
         title="Drag the middle and edges of the selection box to change the range above",
@@ -104,8 +103,7 @@ def plot(
     select.line(x="date", y="cumulative", source=source_base, color="red")
     select.ygrid.grid_line_color = None
     select.add_tools(range_tool)
-    select.toolbar.active_multi = range_tool
-
+    select.toolbar.active_multi = range_tool # type: ignore
     ht = HoverTool(
         tooltips=[
             ("date", "@date{%F}"),
@@ -184,7 +182,7 @@ def plot(
         p_d.xaxis.visible = False
         # dont plot title
         # mix with upper plot
-        p_d.toolbar_location = None
+        p_d.toolbar_location = None # type: ignore
 
         col1.append(p_d)
 
@@ -198,7 +196,7 @@ def plot(
         )
         p_r.line(x=self_df.index, y=self_df, color="red")
         p_r.xaxis.visible = False
-        p_r.toolbar_location = None
+        p_r.toolbar_location = None # type: ignore
 
         col1.append(p_r)
 
@@ -206,7 +204,7 @@ def plot(
         p_a = figure(
             width=col2_width,
             height=200,
-            title=f"Autocorrelation, unit: {self_df.index.freqstr}",
+            title=f"Autocorrelation, unit: {self_df.index.freqstr}", # type: ignore
         )
         df_with_lags = pd.concat([self_df.shift(i) for i in range(100)], axis=1)
         autocorr = df_with_lags.corr().iloc[0, 1:]

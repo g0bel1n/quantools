@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from typing import List
 from quantools import FractionalDiff, generate_brownian_prices
 
 
@@ -15,7 +15,8 @@ def test_FractionalDiff(n_col: int = 10):
 
     diff = FractionalDiff()
     _, orders = diff(X, return_order=True, precision=1e-6)
-    assert len(orders) == n_col and len(np.unique(orders)) > 1
+
+    assert len(orders) == n_col and len(np.unique(orders)) > 1  #type: ignore
 
 
 if __name__ == "__main__":
