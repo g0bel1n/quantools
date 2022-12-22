@@ -1,12 +1,12 @@
+from functools import partial
 from typing import List, Optional, Tuple, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy.special import binom
-from functools import partial
 
-from .dataprocessor import DataProcessor
 from ._utils import isStationnary
+from .dataprocessor import DataProcessor
 
 
 class FractionalDiff(DataProcessor):
@@ -57,7 +57,7 @@ class FractionalDiff(DataProcessor):
                 # print(f"Order of differencing {mid} is not valid")
                 a = mid
 
-        if len(_valid) == 0:
+        if not _valid:
             raise ValueError("Could not find a valid order of differencing")
         return _valid[-1]
 
@@ -96,19 +96,27 @@ class FractionalDiff(DataProcessor):
             cols_name = (
                 [f"{el}_stationnarized" for el in X.columns] if rename else X.columns
             )
+            X_diff = None
+            orders = None
             for col in range(X.shape[1]):
                 X_diff_, order_ = self._1D_diff(
                     X.iloc[:, col], precision, method, order
                 )
-                try:
-                    X_diff = pd.concat((X_diff, X_diff_), axis=1)
-                    orders.append(order_)
-                except UnboundLocalError:
+                if X_diff is None or orders is None:
                     X_diff = X_diff_
                     orders = [order_]
-            X_diff.columns = cols_name
+                else:
+                    X_diff = pd.concat((X_diff, X_diff_), axis=1)
+                    orders.append(order_)
+
+            if X_diff is not None:
+                X_diff.columns = cols_name
+
+        elif isinstance(X, pd.Series):
+            X_diff, orders = self._1D_diff(X, precision, method, order)
+            orders = [orders]
 
         else:
-            X_diff, orders = self._1D_diff(X, precision, method, order)
+            raise ValueError("The input must be a pd.Series or a pd.DataFrame")
 
-        return (X_diff, orders) if return_order else X_diff
+        return (X_diff, orders) if return_order else X_diff  # type: ignore
