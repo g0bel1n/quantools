@@ -3,3 +3,4 @@
 .pytest_cache
 bouillon.py
 *.html
+*.DS_Store
