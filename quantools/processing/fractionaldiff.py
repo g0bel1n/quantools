@@ -15,15 +15,18 @@ class FractionalDiff(DataProcessor):
     def _diff(
         self, X: pd.Series, order: Union[float, int], window_size: int = 10
     ) -> pd.Series:
-        if order == 1:
-            return X - X.shift(int(order))
 
+        _X = X.copy(deep=True)
+        if order == 1:
+            _X = X - X.shift(int(order))
+            
         w = -1
         for i in range(1, window_size):
-            X += w * X.shift(i)
+            _X += w * X.shift(i)
             w *= -(order - i) / (i + 1)
 
-        return X
+        return _X
+
 
     def _autodiff(self, X: pd.Series, precision: float):
         """

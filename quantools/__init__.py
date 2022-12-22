@@ -1,5 +1,6 @@
 from .processing.fractionaldiff import FractionalDiff
-from .table.table import Table
+from .table import Table, TableSeries
+from .plotting import plot
 
 
 import logging
@@ -15,4 +16,4 @@ logger.addHandler(logger_handler)
 logger_handler.setFormatter(logging.Formatter('Quantools : %(message)s'))
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ["FractionalDiff", "Table"]
+__all__ = ["Table", "TableSeries", "FractionalDiff", "plot"]

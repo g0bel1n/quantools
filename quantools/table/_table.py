@@ -6,10 +6,19 @@ import numpy as np
 from typing import Optional, Union
 import re
 
-from quantools.processing import FractionalDiff
+import quantools as qt
+
+from bokeh.plotting import figure, show
+from bokeh.models import TabPanel, Tabs
+
+
 
 logger = logging.getLogger(__name__)
 authorized_filetype = ["csv", "json", "excel", "txt"]
+
+from quantools.quantools_types import *
+
+__available_indicators__ = ["sharpe", "sortino", "calmar", "max_drawdown"]
 
 
 def return_Table(func):
@@ -24,7 +33,101 @@ def return_Table(func):
     return wrapper
 
 
+def assert_ts(func):
+    def wrapper(*args, **kwargs):
+        if not isinstance(args[0], Table) and not isinstance(args[0], TableSeries):
+            raise ValueError("Method can only be applied to Table object")
+        if not pd.api.types.is_datetime64_any_dtype(args[0].index):
+            raise ValueError("Method can only be applied to Table with datetime index")
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@assert_ts
+def sharpe(self, start=None, end=None, risk_free=0):
+    _daily = self.resample("1D").last()
+    _E = _daily.loc[start:end].mean() * 252 - risk_free
+    _std = _daily.loc[start:end].std() * np.sqrt(252)
+    return _E / _std
+
+
+@assert_ts
+def sortino(self, start=None, end=None, risk_free=0):
+    _daily = self.resample("1D").last()
+    _E = _daily.loc[start:end].mean() * 252 - risk_free
+    _std_neg = _daily[_daily < 0].loc[start:end].std() * np.sqrt(252)
+    return _E / _std_neg
+
+
+@assert_ts
+def drawdown(self, start=None, end=None):
+    _daily = self.resample("1D").last()
+    _cummax = _daily.loc[start:end].cummax()
+    return (_daily.loc[start:end] - _cummax) / _cummax
+
+
+@assert_ts
+def max_drawdown(self, start=None, end=None, risk_free=0):
+    return self.drawdown(start, end).min()
+
+
+@assert_ts
+def calmar(self, start=None, end=None, risk_free=0):
+    _daily = self.resample("1D").last()
+    _E = _daily.loc[start:end].mean() * 252 - risk_free
+    _max_drawdown = abs(self.max_drawdown(start, end))
+    print(_E, _max_drawdown)
+    return _E / _max_drawdown
+
+
+@assert_ts
+def indicators(self, start=None, end=None, risk_free=0):
+    indicators_names, indicators_values = [], []
+    for indicator in __available_indicators__:
+        indicators_names.append(indicator)
+        indicators_values.append(getattr(self, indicator)(start, end, risk_free))
+
+    return pd.DataFrame(indicators_values, index=indicators_names, columns=["value"])
+
+
+class TableSeries(Series):
+    @property
+    def _constructor(self):
+        return TableSeries
+
+    @property
+    def _constructor_expanddim(self):
+        return Table
+
+    sharpe = sharpe
+
+    calmar = calmar
+
+    sortino = sortino
+
+    drawdown = drawdown
+
+    max_drawdown = max_drawdown
+
+    indicators = indicators
+
+    def as_df(self):
+        return pd.Series(self)
+
+    def autoplot(self, **kwargs):
+        return show(qt.plot(self, **kwargs))
+
+
 class Table(DataFrame):
+    @property
+    def _constructor(self):
+        return Table
+
+    @property
+    def _constructor_sliced(self):
+        return TableSeries
+
     def __init__(
         self,
         data=None,
@@ -70,6 +173,7 @@ class Table(DataFrame):
         self.is_stationnary = False
         self.is_normalized = False
         nb_rows, nb_cols = self.shape
+
         if verbose:
             print(f"Table has {nb_rows} rows and {nb_cols} columns")
             print(f"Table has {self.memory_usage().sum()/1e6} MB of memory")
@@ -107,7 +211,7 @@ class Table(DataFrame):
                     found = True
                     break
             if not found:
-                logger.warning("No datetime column found")
+                logger.info("No datetime column found")
 
     def __type__(self):
         return "Table"
@@ -121,7 +225,6 @@ class Table(DataFrame):
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
 
-    @return_Table
     def stationnarize(
         self,
         precision: float = 0.1,
@@ -130,9 +233,9 @@ class Table(DataFrame):
         return_order: bool = False,
         inplace=False,
     ):
-        num = self.select_dtypes(include='number')
+        num = self.select_dtypes(include="number")
 
-        frac_diff = FractionalDiff()
+        frac_diff = qt.FractionalDiff()
 
         if not inplace:
             return frac_diff(
@@ -156,9 +259,8 @@ class Table(DataFrame):
         self.loc[:, num.columns] = diff_[0] if return_order else diff_
         return None
 
-    @return_Table
     def normalize(self, inplace=False):
-        num = self.select_dtypes(include='number')
+        num = self.select_dtypes(include="number")
 
         if not inplace:
             return (num - num.mean()) / num.std()
@@ -168,23 +270,29 @@ class Table(DataFrame):
         self.loc[:, num.columns] = (num - num.mean()) / num.std()
         return None
 
-    @return_Table
-    def __get_item__(self, key):
-        return self[key]
+    def as_df(self):
+        return pd.DataFrame(self)
 
-    @return_Table
-    def drop(self, labels=None, axis=0, index=None, columns=None, level=None, inplace=False, errors="raise"):
-        super().drop(labels=labels, axis=axis, index=index, columns=columns, level=level, inplace=inplace, errors=errors)
-        return self
+    sharpe = sharpe
 
-    @return_Table
-    def drop_duplicates(self, subset=..., keep: bool = ..., inplace: bool = ..., ignore_index: bool = ...) -> DataFrame:
-        return super().drop_duplicates(subset, keep, inplace, ignore_index)
+    calmar = calmar
 
-    @return_Table
-    def sharpe(self, start=None, end=None):
-        return self.loc[start:end].mean() / self.loc[start:end].std()
+    sortino = sortino
 
-    @return_Table
-    def calmar(self, start=None, end=None):
-        return self.loc[start:end].mean() / (self.loc[start:end].div(self.loc[start:end].cummax()).sub(1)).max()
+    drawdown = drawdown
+
+    max_drawdown = max_drawdown
+
+    indicators = indicators
+
+    def autoplot(self, **kwargs):
+        tabs=[]
+        for col in self.columns:
+            if pd.api.types.is_numeric_dtype(self[col]):
+                tabs.append(TabPanel(child = qt.plot(self[col], **kwargs), title=col))
+        
+        show(Tabs(tabs=tabs))
+        
+
+               
+
