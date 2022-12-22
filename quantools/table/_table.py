@@ -161,17 +161,17 @@ class Table(DataFrame):
                 raise ValueError(f"Filetype {filetype} is not supported")
 
             if filetype == "csv":
-                self = pd.read_csv(data, header=header)
+                data = pd.read_csv(data, header=header)
             elif filetype == "json":
-                self = pd.read_json(data)
+                data = pd.read_json(data)
             elif filetype == "excel":
-                self = pd.read_excel(
+                data = pd.read_excel(
                     data,
                 )
 
             elif filetype == "txt":
-                self = pd.read_csv(data, sep=",", header=header)
-
+                data = pd.read_csv(data, sep=",", header=header)
+            super().__init__(data)
         else:
             super().__init__(
                 data=data, index=index, columns=columns, dtype=dtype, copy=copy  # type: ignore

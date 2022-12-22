@@ -8,6 +8,8 @@ from scipy.special import binom
 from ._utils import isStationnary
 from .dataprocessor import DataProcessor
 
+import quantools as qt
+
 
 class FractionalDiff(DataProcessor):
     def __init__(self) -> None:
@@ -92,7 +94,7 @@ class FractionalDiff(DataProcessor):
 
         assert order is None or order > 0, ValueError("The order must be positive")
 
-        if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
+        if (isinstance(X, (pd.DataFrame, qt.Table))) and X.shape[1] > 1:
             cols_name = (
                 [f"{el}_stationnarized" for el in X.columns] if rename else X.columns
             )
@@ -112,7 +114,7 @@ class FractionalDiff(DataProcessor):
             if X_diff is not None:
                 X_diff.columns = cols_name
 
-        elif isinstance(X, pd.Series):
+        elif isinstance(X, (pd.Series, qt.TableSeries, qt.Table)):
             X_diff, orders = self._1D_diff(X, precision, method, order)
             orders = [orders]
 
