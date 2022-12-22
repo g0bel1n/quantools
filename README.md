@@ -1,3 +1,3 @@
 Building a package/toolbox for quant tasks. In construction
 
-#TODO : add test and func for Table
+#TODO : add test for plotting, sharpe, calmar etc 
