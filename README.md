@@ -20,7 +20,7 @@ target="_blank"><img src="https://img.shields.io/badge/python-3.9-blue.svg" alt=
 ```python
 import quantools as qt
 
-X = qt.generate_brownian_prices(1, 1000, drift=0, vol=1e-2)
+X = qt.generate_brownian_returns(1, 1000, drift=0, vol=1e-2)
 
 # X is a Table object
 
