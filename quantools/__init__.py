@@ -1,6 +1,7 @@
 from .processing.fractionaldiff import FractionalDiff
 from .table import Table, TableSeries
 from .plotting import plot
+from .utils.sample_data import generate_brownian_prices, generate_brownian_returns
 
 
 import logging
@@ -16,4 +17,4 @@ logger.addHandler(logger_handler)
 logger_handler.setFormatter(logging.Formatter('Quantools : %(message)s'))
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ["Table", "TableSeries", "FractionalDiff", "plot"]
+__all__ = ["Table", "TableSeries", "FractionalDiff", "plot", "generate_brownian_prices", "generate_brownian_returns"]

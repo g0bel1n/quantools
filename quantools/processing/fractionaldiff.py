@@ -1,6 +1,9 @@
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
+import numpy as np
+from scipy.special import binom
+from functools import partial
 
 from .dataprocessor import DataProcessor
 from ._utils import isStationnary
@@ -20,10 +23,12 @@ class FractionalDiff(DataProcessor):
         if order == 1:
             _X = X - X.shift(int(order))
 
-        w = -1
-        for i in range(1, window_size):
-            _X += w * X.shift(i)
-            w *= -(order - i) / (i + 1)
+        else:
+            coeffs = (-1) ** np.arange(window_size) * binom(
+                order, np.arange(window_size)
+            )
+            D = partial(np.convolve, coeffs, mode="valid")
+            _X = _X.rolling(window_size).apply(D, raw=True)
 
         return _X
 
@@ -37,18 +42,24 @@ class FractionalDiff(DataProcessor):
         :type precision: float
         :return: The difference between the current value and the previous value.
         """
-        a, b = 0, 2
+        a, b = 0, 4
         if isStationnary(X):
             return X, 0
-
+        _valid = []
         while b - a >= precision:
             mid = (b + a) / 2
             _X = X.copy(deep=True)
             if isStationnary((diff_serie := self._diff(_X, order=mid))):
+                _valid.append((diff_serie, mid))
+                # print(f"Found a valid order of differencing: {mid}")
                 b = mid
             else:
+                # print(f"Order of differencing {mid} is not valid")
                 a = mid
-        return diff_serie, mid
+
+        if len(_valid) == 0:
+            raise ValueError("Could not find a valid order of differencing")
+        return _valid[-1]
 
     def _1D_diff(
         self,
@@ -78,6 +89,8 @@ class FractionalDiff(DataProcessor):
         assert method in self.valid_method, ValueError(
             f"The method must be in {self.valid_method}"
         )
+
+        assert order is None or order > 0, ValueError("The order must be positive")
 
         if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
             cols_name = (

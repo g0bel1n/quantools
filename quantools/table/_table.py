@@ -8,9 +8,11 @@ import re
 
 import quantools as qt
 
-from bokeh.plotting import figure, show
+from bokeh.plotting import show
 from bokeh.models import TabPanel, Tabs
 
+
+# !!!! uses ddof=0 in std calculation
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ def return_Table(func):
             if isinstance(result, (DataFrame, Series))
             else result
         )
+
     return wrapper
 
 
@@ -42,40 +45,47 @@ def assert_ts(func):
     return wrapper
 
 
+def daily_resampler(self):
+    _a = self.resample("1D").last()
+    _a = _a.fillna(method="ffill")  # if oversampling
+    return _a
+
+
 @assert_ts
 def sharpe(self, start=None, end=None, risk_free=0):
-    _daily = self.resample("1D").last()
+    _daily = daily_resampler(self)
     _E = _daily.loc[start:end].mean() * 252 - risk_free
-    _std = _daily.loc[start:end].std() * np.sqrt(252)
+    _std = _daily.loc[start:end].std(ddof=0) * np.sqrt(252)
     return _E / _std
 
 
 @assert_ts
 def sortino(self, start=None, end=None, risk_free=0):
-    _daily = self.resample("1D").last()
+    _daily = daily_resampler(self)
     _E = _daily.loc[start:end].mean() * 252 - risk_free
-    _std_neg = _daily[_daily < 0].loc[start:end].std() * np.sqrt(252)
+    _std_neg = _daily[_daily < 0].loc[start:end].std(ddof=0) * np.sqrt(252)
     return _E / _std_neg
 
 
 @assert_ts
-def drawdown(self, start=None, end=None):
-    _daily = self.resample("1D").last()
-    _cummax = _daily.loc[start:end].cummax()
-    return (_daily.loc[start:end] - _cummax) / _cummax
+def drawdowns(self, start=None, end=None):
+    _daily = daily_resampler(self)
+    _price = (_daily.loc[start:end] + 1).cumprod() - 1
+    _cummax = _price.cummax()
+    return _cummax - _price
 
 
 @assert_ts
 def max_drawdown(self, start=None, end=None, risk_free=0):
-    return self.drawdown(start, end).min()
+    return self.drawdowns(start, end).max()
 
 
 @assert_ts
 def calmar(self, start=None, end=None, risk_free=0):
-    _daily = self.resample("1D").last()
-    _E = _daily.loc[start:end].mean() * 252 - risk_free
+    # not annualized
+    _daily = daily_resampler(self)
+    _E = _daily.loc[start:end].mean() - risk_free
     _max_drawdown = abs(self.max_drawdown(start, end))
-    print(_E, _max_drawdown)
     return _E / _max_drawdown
 
 
@@ -89,8 +99,12 @@ def indicators(self, start=None, end=None, risk_free=0):
     return pd.DataFrame(indicators_values, index=indicators_names, columns=["value"])
 
 
-class TableSeries(Series):
+@assert_ts
+def cumulative(self, start=None, end=None):
+    return (self.loc[start:end] + 1).cumprod() - 1
 
+
+class TableSeries(Series):
     @property
     def _constructor(self):
         return TableSeries
@@ -105,11 +119,13 @@ class TableSeries(Series):
 
     sortino = sortino
 
-    drawdown = drawdown
+    drawdowns = drawdowns
 
     max_drawdown = max_drawdown
 
     indicators = indicators
+
+    cumulative = cumulative
 
     def as_df(self):
         return pd.Series(self)
@@ -209,6 +225,7 @@ class Table(DataFrame):
                     logger.info(f"Column {col} is set as index")
                     found = True
                     break
+            self.index.name = "date"
             if not found:
                 logger.info("No datetime column found")
 
@@ -262,11 +279,11 @@ class Table(DataFrame):
         num = self.select_dtypes(include="number")
 
         if not inplace:
-            return (num - num.mean()) / num.std()
+            return (num - num.mean()) / num.std(ddof=0)
 
         self.is_normalized = True
 
-        self.loc[:, num.columns] = (num - num.mean()) / num.std()
+        self.loc[:, num.columns] = (num - num.mean()) / num.std(ddof=0)
         return None
 
     def as_df(self):
@@ -278,11 +295,13 @@ class Table(DataFrame):
 
     sortino = sortino
 
-    drawdown = drawdown
+    drawdowns = drawdowns
 
     max_drawdown = max_drawdown
 
     indicators = indicators
+
+    cumulative = cumulative
 
     def autoplot(self, **kwargs):
         tabs = [
@@ -291,7 +310,3 @@ class Table(DataFrame):
             if pd.api.types.is_numeric_dtype(self[col])
         ]
         show(Tabs(tabs=tabs))
-        
-
-               
-
