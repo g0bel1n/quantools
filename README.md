@@ -7,8 +7,8 @@
 
 
 <p align="center">
-<!--<a href="https://github.com/g0bel1n/TinyAutoML/actions/workflows/python-app.yml" 
-target="_blank"><img src="https://github.com/g0bel1n/TinyAutoML/actions/workflows/python-app.yml/badge.svg?branch=master" alt="Tests" /></a> -->
+<a href="https://github.com/g0bel1n/quantools/actions/workflows/testing.yml" 
+target="_blank"><img src="https://github.com/g0bel1n/quantools/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
 <img src="https://img.shields.io/github/license/g0bel1n/TinyAutoML?style=flat-square" alt="Licence MIT" />
 <!-- <img src="https://img.shields.io/pypi/v/TinyAutoML?style=flat-square" alt="Pypi" /> -->
 <img src="https://img.shields.io/github/repo-size/g0bel1N/quantools?style=flat-square" alt="Size" />
