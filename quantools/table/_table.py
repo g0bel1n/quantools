@@ -146,35 +146,37 @@ class Table(DataFrame):
     def __init__(
         self,
         data=None,
-        index=None,
-        columns=None,
         dtype=None,
         copy=False,
         ts=True,
         verbose=False,
-        header=None,
+        parse_dates=False,
+        is_str_data=False,
+        **kwargs,
     ):  # sourcery skip: low-code-quality
 
         if isinstance(data, str):
             filetype = data.split(".")[-1]
-            if filetype not in __authorized_filetype__:
+            if filetype not in __authorized_filetype__ or not is_str_data:
                 raise ValueError(f"Filetype {filetype} is not supported")
-
+            print(is_str_data)
             if filetype == "csv":
-                data = pd.read_csv(data, header=header)
+                data = pd.read_csv(data, **kwargs)
             elif filetype == "json":
-                data = pd.read_json(data)
+                data = pd.read_json(data, **kwargs)
             elif filetype == "excel":
-                data = pd.read_excel(
-                    data,
-                )
+                data = pd.read_excel(data, **kwargs)
 
             elif filetype == "txt":
-                data = pd.read_csv(data, sep=",", header=header)
+                data = pd.read_csv(data, sep=",", **kwargs)
             super().__init__(data)
+        elif is_str_data:
+            data = pd.read_csv(data, **kwargs)
+            super().__init__(data)
+
         else:
             super().__init__(
-                data=data, index=index, columns=columns, dtype=dtype, copy=copy  # type: ignore
+                data=data, dtype=dtype, copy=copy, **kwargs  # type: ignore
             )
 
         self.is_stationnary = False
@@ -191,7 +193,7 @@ class Table(DataFrame):
             else:
                 print("Table has no NaN values")
 
-        if ts and not pd.api.types.is_datetime64_any_dtype(self.index):
+        if ts and not pd.api.types.is_datetime64_any_dtype(self.index) and parse_dates:
             found = False
             for col in self.columns:
                 first_value = self[col][0]
@@ -225,10 +227,10 @@ class Table(DataFrame):
         return "Table"
 
     def __repr__(self):
-        return f"Table({super().__repr__()})"
+        return super().__repr__() + " Table Object"
 
     def __str__(self):
-        return f"Table({super().__str__()})"
+        return super().__str__() + " Table Object"
 
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
