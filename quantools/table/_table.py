@@ -50,7 +50,6 @@ def daily_resampler(self):
     _a = _a.fillna(method="ffill")  # if oversampling
     return _a
 
-
 @assert_ts
 def sharpe(self, start=None, end=None, risk_free=0):
     _daily = daily_resampler(self)
@@ -157,9 +156,8 @@ class Table(DataFrame):
 
         if isinstance(data, str):
             filetype = data.split(".")[-1]
-            if filetype not in __authorized_filetype__ or not is_str_data:
+            if filetype not in __authorized_filetype__ :
                 raise ValueError(f"Filetype {filetype} is not supported")
-            print(is_str_data)
             if filetype == "csv":
                 data = pd.read_csv(data, **kwargs)
             elif filetype == "json":
