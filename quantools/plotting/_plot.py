@@ -2,9 +2,9 @@ import numpy as np
 
 from bokeh.layouts import column, layout, row
 from bokeh.models import ColumnDataSource, RangeTool, HoverTool
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure
 import pandas as pd
-from bokeh.models.widgets import DataTable, TableColumn, Div
+from bokeh.models.widgets import DataTable, TableColumn
 
 import quantools as qt
 
@@ -29,7 +29,9 @@ def plot(
         data={
             "date": self_df.index,
             "value": self_df,
-            "cumulative": (self_df + 1).cumprod() - 1 if is_percent else self_df.cumsum(),
+            "cumulative": (self_df + 1).cumprod() - 1
+            if is_percent
+            else self_df.cumsum(),
         }
     )
 
@@ -55,7 +57,7 @@ def plot(
     # remove toolbar
     logo.toolbar_location = None  # type: ignore
     # remove outline
-    logo.outline_line_color = None # type: ignore
+    logo.outline_line_color = None  # type: ignore
 
     col2.append(logo)
 
@@ -68,7 +70,6 @@ def plot(
     )
 
     if "cumulative" in to_plot:
-
         p.line(
             x="date",
             y="cumulative",
@@ -78,8 +79,8 @@ def plot(
         )
 
     range_tool = RangeTool(x_range=p.x_range)
-    range_tool.overlay.fill_color = "navy" # type: ignore
-    range_tool.overlay.fill_alpha = 0.2 # type: ignore
+    range_tool.overlay.fill_color = "navy"  # type: ignore
+    range_tool.overlay.fill_alpha = 0.2  # type: ignore
 
     select = figure(
         title="Drag the middle and edges of the selection box to change the range above",
@@ -96,7 +97,7 @@ def plot(
     select.line(x="date", y="cumulative", source=source_base, color="red")
     select.ygrid.grid_line_color = None
     select.add_tools(range_tool)
-    select.toolbar.active_multi = range_tool # type: ignore
+    select.toolbar.active_multi = range_tool  # type: ignore
     ht = HoverTool(
         tooltips=[
             ("date", "@date{%F}"),
@@ -115,7 +116,6 @@ def plot(
     col1 += [p, select]
 
     if "indicators" in to_plot:
-
         indicators_df = self.indicators(is_percent=is_percent)
 
         if not indicators_df.empty:
@@ -140,7 +140,6 @@ def plot(
 
     p_n = figure(width=col2_width, height=300, title="Normality (log returns)")
     if "normality" in to_plot:
-
         # get increment from returns
         increment = self_df
 
@@ -175,7 +174,7 @@ def plot(
         p_d.xaxis.visible = False
         # dont plot title
         # mix with upper plot
-        p_d.toolbar_location = None # type: ignore
+        p_d.toolbar_location = None  # type: ignore
 
         col1.append(p_d)
 
@@ -189,7 +188,7 @@ def plot(
         )
         p_r.line(x=self_df.index, y=self_df, color="red")
         p_r.xaxis.visible = False
-        p_r.toolbar_location = None # type: ignore
+        p_r.toolbar_location = None  # type: ignore
 
         col1.append(p_r)
 
@@ -197,7 +196,7 @@ def plot(
         p_a = figure(
             width=col2_width,
             height=200,
-            title=f"Autocorrelation, unit: {self_df.index.freqstr}", # type: ignore
+            title=f"Autocorrelation, unit: {self_df.index.freqstr}",  # type: ignore
         )
         df_with_lags = pd.concat([self_df.shift(i) for i in range(100)], axis=1)
         autocorr = df_with_lags.corr().iloc[0, 1:]
@@ -212,7 +211,6 @@ def plot(
             ("autocorr", "@autocorr"),
         ]
         p_a.add_tools(HoverTool(tooltips=tootltips, mode="vline"))
-
         col2.append(p_a)
 
     return layout(row(column(col1), column(col2)))
