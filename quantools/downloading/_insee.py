@@ -15,8 +15,6 @@ class InseeDownloader(DataDownloader):
     def __init__(self, save_dir: str = "data", **kwargs):
         super().__init__("/".join((save_dir, "insee")), **kwargs)
 
-        
-
     def _build_url_from_kwargs(self, **kwargs) -> str:
 
         self.start_period = kwargs.get("start_period", 1)
@@ -28,7 +26,7 @@ class InseeDownloader(DataDownloader):
         if self.id is None:
             raise ValueError("You must provide an id")
 
-        return f'https://www.insee.fr/en/statistiques/serie/telecharger/csv/{self.id}?ordre=chronologique&transposition=donneescolonne&periodeDebut={self.start_period}&anneeDebut={self.start_year}&periodeFin={self.end_period}&anneeFin={self.end_year}&revision=sansrevisions'
+        return f"https://www.insee.fr/en/statistiques/serie/telecharger/csv/{self.id}?ordre=chronologique&transposition=donneescolonne&periodeDebut={self.start_period}&anneeDebut={self.start_year}&periodeFin={self.end_period}&anneeFin={self.end_year}&revision=sansrevisions"
 
     def _process_data_file(self):
         return self._data
@@ -38,7 +36,9 @@ class InseeDownloader(DataDownloader):
         r = requests.get(self.url)
         files = ZipFile(BytesIO(r.content))
         self._data_file = files.open(files.namelist()[0])
-        self._data = qt.Table(self._data_file, is_str_data = True, sep=';', header=0, skiprows=[1, 2, 3])
+        self._data = qt.Table(
+            self._data_file, is_str_data=True, sep=";", header=0, skiprows=[1, 2, 3]
+        )
         return self._data
 
 
