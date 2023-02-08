@@ -18,7 +18,7 @@ def plot(
         "autocorrelation",
         "indicators",
     ],
-    return_type: str = "percentage",
+    is_percent: bool = True,
 ):
     """
     Plot the table with bokeh
@@ -29,7 +29,7 @@ def plot(
         data={
             "date": self_df.index,
             "value": self_df,
-            "cumulative": (self_df + 1).cumprod() - 1,
+            "cumulative": (self_df + 1).cumprod() - 1 if is_percent else self_df.cumsum(),
         }
     )
 
@@ -58,13 +58,6 @@ def plot(
     logo.outline_line_color = None # type: ignore
 
     col2.append(logo)
-
-    assert return_type in [
-        "percentage",
-        "monetary",
-        "log",
-    ], "return_type must be one of ['percentage', 'monetary', 'log']"
-    # to complete
 
     p = figure(
         width=col1_width,
@@ -123,7 +116,7 @@ def plot(
 
     if "indicators" in to_plot:
 
-        indicators_df = self.indicators()
+        indicators_df = self.indicators(is_percent=is_percent)
 
         if not indicators_df.empty:
             indicators_df = indicators_df.rename(
@@ -171,7 +164,7 @@ def plot(
         title="Drawdown",
     )
     if "drawdown" in to_plot:
-        drawdowns = self.drawdowns()
+        drawdowns = self.drawdowns(is_percent=is_percent)
 
         source_drawdowns = ColumnDataSource(
             data=dict(date=self_df.index, drawdowns=-drawdowns.values)

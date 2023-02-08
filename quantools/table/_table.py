@@ -50,8 +50,9 @@ def daily_resampler(self):
     _a = _a.fillna(method="ffill")  # if oversampling
     return _a
 
+
 @assert_ts
-def sharpe(self, start=None, end=None, risk_free=0):
+def sharpe(self, start=None, end=None, risk_free=0, is_percent=True):
     _daily = daily_resampler(self)
     _E = _daily.loc[start:end].mean() * 252 - risk_free
     _std = _daily.loc[start:end].std(ddof=0) * np.sqrt(252)
@@ -59,7 +60,7 @@ def sharpe(self, start=None, end=None, risk_free=0):
 
 
 @assert_ts
-def sortino(self, start=None, end=None, risk_free=0):
+def sortino(self, start=None, end=None, risk_free=0, is_percent=True):
     _daily = daily_resampler(self)
     _E = _daily.loc[start:end].mean() * 252 - risk_free
     _std_neg = _daily[_daily < 0].loc[start:end].std(ddof=0) * np.sqrt(252)
@@ -67,20 +68,24 @@ def sortino(self, start=None, end=None, risk_free=0):
 
 
 @assert_ts
-def drawdowns(self, start=None, end=None):
+def drawdowns(self, start=None, end=None, is_percent=True):
     _daily = daily_resampler(self)
-    _price = (_daily.loc[start:end] + 1).cumprod() - 1
+    _price = (
+        (_daily.loc[start:end] + 1).cumprod() - 1
+        if is_percent
+        else _daily.loc[start:end].cumsum()
+    )
     _cummax = _price.cummax()
     return _cummax - _price
 
 
 @assert_ts
-def max_drawdown(self, start=None, end=None, risk_free=0):
+def max_drawdown(self, start=None, end=None, risk_free=0, is_percent=True):
     return self.drawdowns(start, end).max()
 
 
 @assert_ts
-def calmar(self, start=None, end=None, risk_free=0):
+def calmar(self, start=None, end=None, risk_free=0, is_percent=True):
     # not annualized
     _daily = daily_resampler(self)
     _E = _daily.loc[start:end].mean() - risk_free
@@ -89,18 +94,24 @@ def calmar(self, start=None, end=None, risk_free=0):
 
 
 @assert_ts
-def indicators(self, start=None, end=None, risk_free=0):
+def indicators(self, start=None, end=None, risk_free=0, is_percent=True):
     indicators_names, indicators_values = [], []
     for indicator in __available_indicators__:
         indicators_names.append(indicator)
-        indicators_values.append(getattr(self, indicator)(start, end, risk_free))
+        indicators_values.append(
+            getattr(self, indicator)(start, end, risk_free, is_percent=is_percent)
+        )
 
     return pd.DataFrame(indicators_values, index=indicators_names, columns=["value"])
 
 
 @assert_ts
-def cumulative(self, start=None, end=None):
-    return (self.loc[start:end] + 1).cumprod() - 1
+def cumulative(self, start=None, end=None, is_percent=True):
+    return (
+        (self.loc[start:end] + 1).cumprod() - 1
+        if is_percent
+        else self.loc[start:end].cumsum()
+    )
 
 
 class TableSeries(Series):
@@ -156,7 +167,7 @@ class Table(DataFrame):
 
         if isinstance(data, str):
             filetype = data.split(".")[-1]
-            if filetype not in __authorized_filetype__ :
+            if filetype not in __authorized_filetype__:
                 raise ValueError(f"Filetype {filetype} is not supported")
             if filetype == "csv":
                 data = pd.read_csv(data, **kwargs)
