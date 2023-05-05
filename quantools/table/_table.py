@@ -1,16 +1,14 @@
-import pandas as pd
-from pandas import DataFrame, Series
-import os
 import logging
-import numpy as np
-from typing import Optional, Union
 import re
+from typing import Optional, Union
+
+import numpy as np
+import pandas as pd
+from bokeh.models import TabPanel, Tabs
+from bokeh.plotting import show
+from pandas import DataFrame, Series
 
 import quantools as qt
-
-from bokeh.plotting import show
-from bokeh.models import TabPanel, Tabs
-
 
 # !!!! uses ddof=0 in std calculation
 
@@ -164,7 +162,6 @@ class Table(DataFrame):
         is_str_data=False,
         **kwargs,
     ):  # sourcery skip: low-code-quality
-
         if isinstance(data, str):
             filetype = data.split(".")[-1]
             if filetype not in __authorized_filetype__:
@@ -277,6 +274,17 @@ class Table(DataFrame):
         )
         self[num.columns] = diff_[0] if return_order else diff_
         return None
+
+    def pca(self, order: int = 10, inplace=False):
+        num = self.select_dtypes(include="number")
+        pca = qt.PCA(order=order)
+        _pca = pca(num)
+        if inplace:
+            self[_pca.columns] = _pca.values
+            self.drop(columns=num.columns, inplace=True)
+            return None
+
+        return _pca
 
     def normalize(self, inplace=False):
         num = self.select_dtypes(include="number")

@@ -1,3 +1,3 @@
 from ._insee import InseeDownloader
 
-__all__ = ['InseeDownloader']
+__all__ = ["InseeDownloader"]

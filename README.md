@@ -20,4 +20,6 @@ target="_blank"><img src="https://img.shields.io/badge/python-3.9-blue.svg" alt=
 
 
 
-## TODO : add test for plotting, sharpe, calmar etc 
+## To solve :
+  - decide if returns are $x_t - x_{t-1}$ or $\frac{x_{t+1}-x_{t}}{x_t}$
+  - Type confusion between qt.Table and pd.DataFrame

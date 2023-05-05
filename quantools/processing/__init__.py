@@ -1,3 +1,4 @@
 from .fractionaldiff import FractionalDiff
+from .pca import PCA
 
-__all__ = ["FractionalDiff"]
+__all__ = ["FractionalDiff", "PCA"]

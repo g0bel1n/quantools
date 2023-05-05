@@ -5,7 +5,12 @@ import quantools as qt
 
 
 def generate_brownian_prices(
-    n_timeseries, n_periods: int, drift: float = 0, vol: float = 1, s0: float = 1, dt=1
+    n_timeseries: int,
+    n_periods: int,
+    drift: float = 0,
+    vol: float = 1,
+    s0: float = 1,
+    dt=1,
 ):
     """
 
@@ -47,7 +52,6 @@ def generate_brownian_prices(
 def generate_brownian_returns(
     n_timeseries: int, n_periods: int, drift: float = 0, vol: float = 1, dt=1
 ):
-
     """
     It generates a table of returns for a given number of time series, with a given number of periods,
     and a given drift and volatility
